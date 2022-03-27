@@ -1,0 +1,17 @@
+{
+  "name": "my-mini-vue3-course",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/qq449245884/my-mini-vue3-course.git",
+  "author": "qq449245884 <449245884@qq.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.17.8",
+    "@babel/preset-env": "^7.16.11",
+    "@babel/preset-typescript": "^7.16.7",
+    "@types/jest": "^27.4.1",
+    "babel-jest": "^27.5.1",
+    "jest": "^27.5.1",
+    "typescript": "^4.4.2"
+  }
+}
