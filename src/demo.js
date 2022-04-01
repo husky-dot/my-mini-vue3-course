@@ -1,13 +1,26 @@
 
 const bucket = new WeakMap()
 
-const data = { text: 'hello world'}
+const data = { ok: true, text: 'hello world'}
 // 保存当前被注册副作用函数
 let activeEffect
 
 function effect (fn) {
-  activeEffect = fn
-  fn()
+  const effectFn = () => {
+    cleanup(effectFn)
+    activeEffect = effectFn
+    fn()
+  }
+  effectFn.deps = []
+  effectFn()
+}
+
+function cleanup (effectFn) {
+  for (let i = 0; i < effectFn.deps.length; i++) {
+    const deps = effectFn.deps[i]
+    deps.delete(effectFn)
+  }
+  effectFn.deps.length = 0
 }
 
 function track (target, key) {
@@ -23,13 +36,17 @@ function track (target, key) {
     desMap.set(key, deps)
   }
   deps.add(activeEffect)
+  activeEffect.deps.push(deps)
+  console.log('activeEffect.deps>>', activeEffect.deps.length)
 }
 
 function trigger (target, key) {
   const desMap = bucket.get(target)
   if (!desMap) return
   const effects = desMap.get(key)
-  effects && effects.forEach(fn => fn())
+  const effectToRun = new Set(effects)
+  effectToRun.forEach(effectFn => effectFn())
+  // effects && effects.forEach(fn => fn())
 }
 const obj = new Proxy(data,  {
   // 拦截读取操作
@@ -48,10 +65,10 @@ const obj = new Proxy(data,  {
 
 effect(function effectFn() {
   console.log('effect run')
-  document.body.innerText = obj.text
+  document.body.innerText = obj.ok ? obj.text : 'not'
 })
 
-setTimeout(() => {
-  obj.text = 'hello vue3'
-}, 3000)
+// setTimeout(() => {
+//   obj.text = 'hello vue3'
+// }, 3000)
 
