@@ -1,15 +1,19 @@
 
 const bucket = new WeakMap()
 
-const data = { ok: true, text: 'hello world'}
+const data = { foo: true, bar: true}
 // 保存当前被注册副作用函数
 let activeEffect
+const effectStack = []
 
 function effect (fn) {
   const effectFn = () => {
     cleanup(effectFn)
     activeEffect = effectFn
+    effectStack.push(effectFn)
     fn()
+    effectStack.pop()
+    activeEffect = effectStack[effectStack.length - 1]
   }
   effectFn.deps = []
   effectFn()
@@ -37,7 +41,6 @@ function track (target, key) {
   }
   deps.add(activeEffect)
   activeEffect.deps.push(deps)
-  console.log('activeEffect.deps>>', activeEffect.deps.length)
 }
 
 function trigger (target, key) {
@@ -63,12 +66,24 @@ const obj = new Proxy(data,  {
   }
 })
 
-effect(function effectFn() {
-  console.log('effect run')
-  document.body.innerText = obj.ok ? obj.text : 'not'
-})
+// effect(function effectFn() {
+//   console.log('effect run')
+//   document.body.innerText = obj.ok ? obj.text : 'not'
+// })
 
 // setTimeout(() => {
 //   obj.text = 'hello vue3'
 // }, 3000)
+
+
+let tmp1, tmp2
+
+effect(function effectFn1() {
+  console.log('effectFn1 执行了')
+  effect(function effectFn2() {
+    console.log('effectFn2 执行')
+    tmp2 = obj.bar
+  })
+  tmp1 = obj.foo
+})
 
