@@ -1,7 +1,7 @@
 
 const bucket = new WeakMap()
 
-const data = { foo: 1 }
+const data = { foo: 1, bar: 4}
 // 用一个全局变量存储当前激活的 effect 函数
 let activeEffect
 // effect 栈
@@ -13,16 +13,20 @@ function effect (fn, options = {}) {
     // 当调用副作用函数之前将当前副作用函数压入栈中
     activeEffect = effectFn
     effectStack.push(effectFn)
-    fn()
+    const res = fn()
     // 在当前副作用函数执行完毕后，将当前副作用函数弹出栈，并把 activeEffect 还原为之前的值
     effectStack.pop()
     activeEffect = effectStack[effectStack.length - 1]
+    return res
   }
   effectFn.options = options
   // activeEffect.deps 用来存储所有与该副作用函数相关的依赖集合
   effectFn.deps = []
-  // 执行副作用函数
-  effectFn()
+  if (!options.lazy) {
+    // 执行副作用函数
+    effectFn()
+  }
+  return effectFn
 }
 
 function cleanup (effectFn) {
@@ -102,14 +106,19 @@ function flushJog () {
   })
 }
 
-effect(() => {
-  console.log(obj.foo)
-}, {
-  scheduler(fn) {
-    jobQueue.add(fn)
-    flushJog()
+function computed (getter) {
+  // 把 getter 作为副作用函数，创建一个 lazy 的 effect
+  const effectFn = effect(getter, {
+    lazy: true
+  })
+  const obj = {
+    // 当读取 value 时执行 effectFn
+    get value() {
+      return effectFn()
+    }
   }
-})
+  return obj
+}
 
-obj.foo++
-obj.foo++
+const sumRes = computed(() => obj.foo + obj.bar)
+console.log(sumRes.value)
