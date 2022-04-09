@@ -7,7 +7,7 @@ let activeEffect
 // effect 栈
 const effectStack = []
 
-function effect (fn) {
+function effect (fn, options = {}) {
   const effectFn = () => {
     cleanup(effectFn)
     // 当调用副作用函数之前将当前副作用函数压入栈中
@@ -18,6 +18,7 @@ function effect (fn) {
     effectStack.pop()
     activeEffect = effectStack[effectStack.length - 1]
   }
+  effectFn.options = options
   // activeEffect.deps 用来存储所有与该副作用函数相关的依赖集合
   effectFn.deps = []
   // 执行副作用函数
@@ -62,8 +63,12 @@ function trigger (target, key) {
   const effects = desMap.get(key)
   const effectToRun = new Set(effects)
   effectToRun.forEach(effectFn => {
-    if (effectFn !== activeEffect) {
-      effectFn()
+    if (effectFn.options.scheduler) {
+      effectFn.options.scheduler(effectFn)
+    } else {
+      if (effectFn !== activeEffect) {
+        effectFn()
+      }
     }
   })
   // effects && effects.forEach(fn => fn())
@@ -83,7 +88,28 @@ const obj = new Proxy(data,  {
   }
 })
 
+const jobQueue = new Set()
+const p = Promise.resolve()
+let isFlushing = false
+
+function flushJog () {
+  if (isFlushing) return
+  isFlushing = true
+  p.then(() => {
+    jobQueue.forEach(job => job())
+  }).finally(() => {
+    isFlushing = false
+  })
+}
+
 effect(() => {
-  // obj.foo ++
-  obj.foo = obj.foo + 1
+  console.log(obj.foo)
+}, {
+  scheduler(fn) {
+    jobQueue.add(fn)
+    flushJog()
+  }
 })
+
+obj.foo++
+obj.foo++
