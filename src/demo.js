@@ -9,6 +9,7 @@ const effectStack = []
 
 function effect (fn, options = {}) {
   const effectFn = () => {
+    console.log('effectFn执行了')
     cleanup(effectFn)
     // 当调用副作用函数之前将当前副作用函数压入栈中
     activeEffect = effectFn
@@ -107,18 +108,47 @@ function flushJog () {
 }
 
 function computed (getter) {
+  let value
+  let dirty = true
   // 把 getter 作为副作用函数，创建一个 lazy 的 effect
   const effectFn = effect(getter, {
-    lazy: true
+    lazy: true,
+    scheduler() {
+      if (!dirty) {
+        dirty = true
+        trigger(obj, 'value')
+      }
+  
+    }
   })
   const obj = {
     // 当读取 value 时执行 effectFn
     get value() {
-      return effectFn()
+      if (dirty) {
+        value = effectFn()
+        dirty = false
+      }
+      track(obj, 'value')
+      return value 
     }
   }
   return obj
 }
 
 const sumRes = computed(() => obj.foo + obj.bar)
-console.log(sumRes.value)
+
+effect(() => {
+  console.log(sumRes.value)
+})
+obj.foo++
+
+
+
+
+
+
+
+
+
+
+
