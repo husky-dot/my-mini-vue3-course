@@ -144,7 +144,7 @@ function traverse (value, seen = new Set()) {
   return value
 }
 
-function watch(source, cb) {
+function watch(source, cb, options = {}) {
   let getter
   let newValue
   let oldValue
@@ -153,23 +153,38 @@ function watch(source, cb) {
   } else {
     getter = () => traverse(source)
   }
+  // 提取 scheduer 调度函数为一个独立的 job 函数
+  const job = () => {
+    newValue = effectFn()
+    cb(oldValue, newValue)
+    oldValue = newValue
+  }
   const effectFn = effect(()=> getter(), {
     lazy: true,
-    scheduler() {
-      newValue = effectFn()
-      cb(oldValue, newValue)
-      oldValue = newValue
-    }
+    scheduler: () => {
+      if (options.flush === 'post') {
+        const p = Promise.resolve()
+        p.then(job)
+      } else {
+        job()
+      }
+    },
   })
-  oldValue = effectFn()
+  if (options.immediate) {
+     // 当immediate 为 true 时立即执行 job，从而触发回调执行
+    job()
+  } else {
+    oldValue = effectFn()
+  }
 }
 
-watch(() => obj.foo, (newValue, oldValue) => {
-  console.log(newValue, oldValue)
+watch(() => obj.foo, (oldValue) => {
+  console.log('数据变化了', oldValue)
+}, {
+  flush: 'post' // pre  sync
 })
 
 obj.foo++
-
-
+console.log('结束了')
 
 
