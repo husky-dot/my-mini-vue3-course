@@ -135,19 +135,40 @@ function computed (getter) {
   return obj
 }
 
-const sumRes = computed(() => obj.foo + obj.bar)
+function traverse (value, seen = new Set()) {
+  if (typeof value !== 'object' || value === null || seen.has(value)) return
+  seen.add(value)
+  for (const k in value) {
+    traverse(value[k], seen)
+  }
+  return value
+}
 
-effect(() => {
-  console.log(sumRes.value)
+function watch(source, cb) {
+  let getter
+  let newValue
+  let oldValue
+  if (typeof source === 'function') {
+    getter = source
+  } else {
+    getter = () => traverse(source)
+  }
+  const effectFn = effect(()=> getter(), {
+    lazy: true,
+    scheduler() {
+      newValue = effectFn()
+      cb(oldValue, newValue)
+      oldValue = newValue
+    }
+  })
+  oldValue = effectFn()
+}
+
+watch(() => obj.foo, (newValue, oldValue) => {
+  console.log(newValue, oldValue)
 })
+
 obj.foo++
-
-
-
-
-
-
-
 
 
 
