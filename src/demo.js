@@ -148,6 +148,12 @@ function watch(source, cb, options = {}) {
   let getter
   let newValue
   let oldValue
+  // cleanup 用来存储用户注册 的过期回调
+  let cleanup
+  function onInvalidate (fn) {
+    // 将过期回调存储到 cleanup 中
+    cleanup = fn
+  }
   if (typeof source === 'function') {
     getter = source
   } else {
@@ -156,7 +162,10 @@ function watch(source, cb, options = {}) {
   // 提取 scheduer 调度函数为一个独立的 job 函数
   const job = () => {
     newValue = effectFn()
-    cb(oldValue, newValue)
+    if (cleanup) {
+      cleanup()
+    }
+    cb(newValue, oldValue, onInvalidate)
     oldValue = newValue
   }
   const effectFn = effect(()=> getter(), {
@@ -178,13 +187,29 @@ function watch(source, cb, options = {}) {
   }
 }
 
-watch(() => obj.foo, (oldValue) => {
-  console.log('数据变化了', oldValue)
-}, {
-  flush: 'post' // pre  sync
+let finalData
+let fetchA = true
+watch(obj, async(newValue, oldValue, onInvalidate) => {
+   // 定义一个标志，代表当前副作用函数是否过期，默认为 false ，代表没有过期
+  let expired = false
+  onInvalidate(() => {
+    expired = true
+  })
+  const requestUrl = fetchA
+    ? 'https://www.fastmock.site/mock/eb259ab82df9fa23480763b128dd0b4a/api/api/use-list1'
+    : 'https://www.fastmock.site/mock/eb259ab82df9fa23480763b128dd0b4a/api/api/use-list2'
+  
+  const res = await fetch(requestUrl).then((res) => {
+    return res.json()
+  })
+  if (!expired) {
+    finalData = res.body.userList
+    console.log(finalData)
+  }
 })
 
 obj.foo++
-console.log('结束了')
+fetchA = false
+obj.foo++
 
 
