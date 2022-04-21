@@ -1,7 +1,11 @@
 
 const bucket = new WeakMap()
 
-const data = { foo: 1, bar: 4}
+const obj = { foo: 1,
+  get bar () {
+    return this.foo
+  }
+}
 // 用一个全局变量存储当前激活的 effect 函数
 let activeEffect
 // effect 栈
@@ -78,18 +82,20 @@ function trigger (target, key) {
   })
   // effects && effects.forEach(fn => fn())
 }
-const obj = new Proxy(data,  {
+const px = new Proxy(obj,  {
   // 拦截读取操作
-  get (target, key) {
+  get (target, key, receiver) {
     // 收集依赖
     track(target, key)
-    return target[key]
+    return Reflect.get(target, key, receiver)
   },
-  set (target, key, newVal) {
+  set (target, key, newVal, receiver) {
     target[key] = newVal
+    // 设置属性值
+    const res = Reflect.set(target, key, newVal, receiver)
     // 触发依赖
     trigger(target, key)
-    return true
+    return res
   }
 })
 
@@ -208,8 +214,7 @@ watch(obj, async(newValue, oldValue, onInvalidate) => {
   }
 })
 
-obj.foo++
-fetchA = false
-obj.foo++
-
-
+effect(() => {
+  console.log('effect 执行了')
+  console.log(px.bar)
+})
