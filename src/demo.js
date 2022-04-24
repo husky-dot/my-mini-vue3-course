@@ -96,6 +96,10 @@ const px = new Proxy(obj,  {
     // 触发依赖
     trigger(target, key)
     return res
+  },
+  has (target, key) {
+    track(target, key)
+    return Reflect.has(target, key)
   }
 })
 
@@ -216,5 +220,5 @@ watch(obj, async(newValue, oldValue, onInvalidate) => {
 
 effect(() => {
   console.log('effect 执行了')
-  console.log(px.bar)
+  "foo" in px
 })
