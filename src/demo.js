@@ -1,7 +1,7 @@
 const bucket = new WeakMap()
 const TriggerType = {
   SET: 'SET',
-  ADD: 'ADD'
+  ADD: 'ADD',
 }
 
 const obj = { foo: 1 }
@@ -68,16 +68,20 @@ function track(target, key) {
 function trigger(target, key, type) {
   const desMap = bucket.get(target)
   if (!desMap) return
+  // 取得与 key 相关联的副作用函数
   const effects = desMap.get(key)
   const iterateEffects = desMap.get(ITERATE_KEY)
   const effectToRun = new Set()
-  effects && effects.forEach(effectFn => {
-    effectToRun.add(effectFn)
-  })
-  if (type === TriggerType.ADD) {
-    iterateEffects && iterateEffects.forEach(effectFn => {
+  effects &&
+    effects.forEach((effectFn) => {
       effectToRun.add(effectFn)
     })
+  if (type === TriggerType.ADD) {
+    // 将 ITERATE_KEY 相关联的副作用函数也添加到 effectToRun
+    iterateEffects &&
+      iterateEffects.forEach((effectFn) => {
+        effectToRun.add(effectFn)
+      })
   }
   effectToRun.forEach((effectFn) => {
     if (effectFn.options.scheduler) {
@@ -99,7 +103,10 @@ const px = new Proxy(obj, {
     return Reflect.get(target, key, receiver)
   },
   set(target, key, newVal, receiver) {
-    const type = Object.prototype.hasOwnProperty.call(target, key) ? TriggerType.Set : TriggerType.ADD
+    // 如果属性不存在，则说明是在添加新属性，否则是设置已有属性
+    const type = Object.prototype.hasOwnProperty.call(target, key)
+      ? TriggerType.Set
+      : TriggerType.ADD
     target[key] = newVal
     // 设置属性值
     const res = Reflect.set(target, key, newVal, receiver)
@@ -108,6 +115,7 @@ const px = new Proxy(obj, {
     return res
   },
   ownKeys(target) {
+    // 将副作用函数与 ITERATE_KEY关联
     track(target, ITERATE_KEY)
     return Reflect.ownKeys(target)
   },
