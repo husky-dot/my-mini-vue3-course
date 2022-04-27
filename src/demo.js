@@ -1,7 +1,8 @@
 const bucket = new WeakMap()
 const TriggerType = {
   SET: 'SET',
-  ADD: 'ADD'
+  ADD: 'ADD',
+  DELETE: 'DELETE'
 }
 
 const obj = { foo: 1 }
@@ -74,7 +75,7 @@ function trigger(target, key, type) {
   effects && effects.forEach(effectFn => {
     effectToRun.add(effectFn)
   })
-  if (type === TriggerType.ADD) {
+  if (type === TriggerType.ADD || type === TriggerType.DELETE) {
     iterateEffects && iterateEffects.forEach(effectFn => {
       effectToRun.add(effectFn)
     })
@@ -115,6 +116,14 @@ const px = new Proxy(obj, {
     track(target, key)
     return Reflect.has(target, key)
   },
+  deleteProperty(target, key) {
+    const hadKey = Object.prototype.hasOwnProperty.call(target, key)
+    const res = Reflect.deleteProperty(target, key)
+    if (hadKey && res) {
+      trigger(target, key, TriggerType.DELETE)
+    }
+    return res
+  }
 })
 
 const jobQueue = new Set()
