@@ -1,17 +1,16 @@
-
 const bucket = new WeakMap()
-
-const obj = { foo: 1,
-  get bar () {
-    return this.foo
-  }
+const TriggerType = {
+  SET: 'SET',
+  ADD: 'ADD'
 }
+
+const obj = { foo: 1 }
 // 用一个全局变量存储当前激活的 effect 函数
 let activeEffect
 // effect 栈
 const effectStack = []
 
-function effect (fn, options = {}) {
+function effect(fn, options = {}) {
   const effectFn = () => {
     console.log('effectFn执行了')
     cleanup(effectFn)
@@ -34,7 +33,7 @@ function effect (fn, options = {}) {
   return effectFn
 }
 
-function cleanup (effectFn) {
+function cleanup(effectFn) {
   // 遍历 effectFn.deps 数组
   for (let i = 0; i < effectFn.deps.length; i++) {
     // deps 是依赖集合
@@ -46,7 +45,7 @@ function cleanup (effectFn) {
   effectFn.deps.length = 0
 }
 
-function track (target, key) {
+function track(target, key) {
   // 没有 activeEffect 直接  return
   if (!activeEffect) return
   let desMap = bucket.get(target)
@@ -66,12 +65,21 @@ function track (target, key) {
   activeEffect.deps.push(deps)
 }
 
-function trigger (target, key) {
+function trigger(target, key, type) {
   const desMap = bucket.get(target)
   if (!desMap) return
   const effects = desMap.get(key)
-  const effectToRun = new Set(effects)
-  effectToRun.forEach(effectFn => {
+  const iterateEffects = desMap.get(ITERATE_KEY)
+  const effectToRun = new Set()
+  effects && effects.forEach(effectFn => {
+    effectToRun.add(effectFn)
+  })
+  if (type === TriggerType.ADD) {
+    iterateEffects && iterateEffects.forEach(effectFn => {
+      effectToRun.add(effectFn)
+    })
+  }
+  effectToRun.forEach((effectFn) => {
     if (effectFn.options.scheduler) {
       effectFn.options.scheduler(effectFn)
     } else {
@@ -82,42 +90,48 @@ function trigger (target, key) {
   })
   // effects && effects.forEach(fn => fn())
 }
-const px = new Proxy(obj,  {
+const ITERATE_KEY = Symbol()
+const px = new Proxy(obj, {
   // 拦截读取操作
-  get (target, key, receiver) {
+  get(target, key, receiver) {
     // 收集依赖
     track(target, key)
     return Reflect.get(target, key, receiver)
   },
-  set (target, key, newVal, receiver) {
+  set(target, key, newVal, receiver) {
+    const type = Object.prototype.hasOwnProperty.call(target, key) ? TriggerType.Set : TriggerType.ADD
     target[key] = newVal
     // 设置属性值
     const res = Reflect.set(target, key, newVal, receiver)
     // 触发依赖
-    trigger(target, key)
+    trigger(target, key, type)
     return res
   },
-  has (target, key) {
+  ownKeys(target) {
+    track(target, ITERATE_KEY)
+    return Reflect.ownKeys(target)
+  },
+  has(target, key) {
     track(target, key)
     return Reflect.has(target, key)
-  }
+  },
 })
 
 const jobQueue = new Set()
 const p = Promise.resolve()
 let isFlushing = false
 
-function flushJog () {
+function flushJog() {
   if (isFlushing) return
   isFlushing = true
   p.then(() => {
-    jobQueue.forEach(job => job())
+    jobQueue.forEach((job) => job())
   }).finally(() => {
     isFlushing = false
   })
 }
 
-function computed (getter) {
+function computed(getter) {
   let value
   let dirty = true
   // 把 getter 作为副作用函数，创建一个 lazy 的 effect
@@ -128,8 +142,7 @@ function computed (getter) {
         dirty = true
         trigger(obj, 'value')
       }
-  
-    }
+    },
   })
   const obj = {
     // 当读取 value 时执行 effectFn
@@ -139,13 +152,13 @@ function computed (getter) {
         dirty = false
       }
       track(obj, 'value')
-      return value 
-    }
+      return value
+    },
   }
   return obj
 }
 
-function traverse (value, seen = new Set()) {
+function traverse(value, seen = new Set()) {
   if (typeof value !== 'object' || value === null || seen.has(value)) return
   seen.add(value)
   for (const k in value) {
@@ -160,7 +173,7 @@ function watch(source, cb, options = {}) {
   let oldValue
   // cleanup 用来存储用户注册 的过期回调
   let cleanup
-  function onInvalidate (fn) {
+  function onInvalidate(fn) {
     // 将过期回调存储到 cleanup 中
     cleanup = fn
   }
@@ -178,7 +191,7 @@ function watch(source, cb, options = {}) {
     cb(newValue, oldValue, onInvalidate)
     oldValue = newValue
   }
-  const effectFn = effect(()=> getter(), {
+  const effectFn = effect(() => getter(), {
     lazy: true,
     scheduler: () => {
       if (options.flush === 'post') {
@@ -190,7 +203,7 @@ function watch(source, cb, options = {}) {
     },
   })
   if (options.immediate) {
-     // 当immediate 为 true 时立即执行 job，从而触发回调执行
+    // 当immediate 为 true 时立即执行 job，从而触发回调执行
     job()
   } else {
     oldValue = effectFn()
@@ -199,8 +212,8 @@ function watch(source, cb, options = {}) {
 
 let finalData
 let fetchA = true
-watch(obj, async(newValue, oldValue, onInvalidate) => {
-   // 定义一个标志，代表当前副作用函数是否过期，默认为 false ，代表没有过期
+watch(obj, async (newValue, oldValue, onInvalidate) => {
+  // 定义一个标志，代表当前副作用函数是否过期，默认为 false ，代表没有过期
   let expired = false
   onInvalidate(() => {
     expired = true
@@ -208,7 +221,7 @@ watch(obj, async(newValue, oldValue, onInvalidate) => {
   const requestUrl = fetchA
     ? 'https://www.fastmock.site/mock/eb259ab82df9fa23480763b128dd0b4a/api/api/use-list1'
     : 'https://www.fastmock.site/mock/eb259ab82df9fa23480763b128dd0b4a/api/api/use-list2'
-  
+
   const res = await fetch(requestUrl).then((res) => {
     return res.json()
   })
@@ -220,5 +233,7 @@ watch(obj, async(newValue, oldValue, onInvalidate) => {
 
 effect(() => {
   console.log('effect 执行了')
-  "foo" in px
+  for (const key in px) {
+    console.log(key)
+  }
 })
