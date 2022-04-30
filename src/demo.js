@@ -5,7 +5,7 @@ const TriggerType = {
   DELETE: 'DELETE'
 }
 
-const obj = { foo: 1 }
+const obj = { foo: NaN }
 // 用一个全局变量存储当前激活的 effect 函数
 let activeEffect
 // effect 栈
@@ -100,12 +100,15 @@ const px = new Proxy(obj, {
     return Reflect.get(target, key, receiver)
   },
   set(target, key, newVal, receiver) {
+    const oldVal = target[key]
     const type = Object.prototype.hasOwnProperty.call(target, key) ? TriggerType.Set : TriggerType.ADD
     target[key] = newVal
     // 设置属性值
     const res = Reflect.set(target, key, newVal, receiver)
     // 触发依赖
-    trigger(target, key, type)
+    if (oldVal !== newVal && (oldVal === oldVal || newVal === newVal)) {
+      trigger(target, key, type)
+    }
     return res
   },
   ownKeys(target) {
@@ -242,7 +245,5 @@ watch(obj, async (newValue, oldValue, onInvalidate) => {
 
 effect(() => {
   console.log('effect 执行了')
-  for (const key in px) {
-    console.log(key)
-  }
+  console.log(px.foo)
 })
