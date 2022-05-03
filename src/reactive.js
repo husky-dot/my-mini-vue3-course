@@ -100,17 +100,26 @@ export function reactive (obj) {
 export function shallowReactive (obj) {
   return createReactive(obj, true)
 }
+export function readonly (obj) {
+  return createReactive(obj, false, true)
+}
+export function shallowReadonly (obj) {
+  return createReactive(obj, true, true)
+}
 
 
-export function createReactive (obj, isShallow = false) {
+
+export function createReactive (obj, isShallow = false, isReadonly = false) {
   return new Proxy(obj, {
     // 拦截读取操作
     get(target, key, receiver) {
       if (key === 'raw') {
         return target
       }
-      // 收集依赖
-      track(target, key)
+      if (!readonly) {
+        // 收集依赖
+        track(target, key)
+      }
       // 调用 reactive 将结果包装成响应式数据并返回
       const res = Reflect.get(target, key, receiver)
       // 如果是浅响应，则直接返回原始值
@@ -118,11 +127,15 @@ export function createReactive (obj, isShallow = false) {
         return res
       }
       if (typeof res === 'object' && res !== null) {
-        return reactive(res)
+        return isReadonly ? readonly(res) : reactive(res)
       }
       return res
     },
     set(target, key, newVal, receiver) {
+      if (isReadonly) {
+        console.error(`属性${key}是只读的`)
+        return true
+      }
       const oldVal = target[key]
       const type = Object.prototype.hasOwnProperty.call(target, key) ? TriggerType.Set : TriggerType.ADD
       // 设置属性值
@@ -144,6 +157,10 @@ export function createReactive (obj, isShallow = false) {
       return Reflect.has(target, key)
     },
     deleteProperty(target, key) {
+      if (isReadonly) {
+        console.error(`属性${key}是只读的`)
+        return true
+      }
       const hadKey = Object.prototype.hasOwnProperty.call(target, key)
       const res = Reflect.deleteProperty(target, key)
       if (hadKey && res) {
