@@ -92,7 +92,17 @@ function trigger(target, key, type) {
 }
 const ITERATE_KEY = Symbol()
 
+
 export function reactive (obj) {
+  return createReactive(obj)
+}
+
+export function shallowReactive (obj) {
+  return createReactive(obj, true)
+}
+
+
+export function createReactive (obj, isShallow = false) {
   return new Proxy(obj, {
     // 拦截读取操作
     get(target, key, receiver) {
@@ -101,7 +111,16 @@ export function reactive (obj) {
       }
       // 收集依赖
       track(target, key)
-      return Reflect.get(target, key, receiver)
+      // 调用 reactive 将结果包装成响应式数据并返回
+      const res = Reflect.get(target, key, receiver)
+      // 如果是浅响应，则直接返回原始值
+      if (isShallow) {
+        return res
+      }
+      if (typeof res === 'object' && res !== null) {
+        return reactive(res)
+      }
+      return res
     },
     set(target, key, newVal, receiver) {
       const oldVal = target[key]
