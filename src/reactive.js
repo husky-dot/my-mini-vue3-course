@@ -5,15 +5,14 @@ const TriggerType = {
   DELETE: 'DELETE'
 }
 
-const obj = { foo: NaN }
+
 // 用一个全局变量存储当前激活的 effect 函数
 let activeEffect
 // effect 栈
 const effectStack = []
 
-function effect(fn, options = {}) {
+export function effect(fn, options = {}) {
   const effectFn = () => {
-    console.log('effectFn执行了')
     cleanup(effectFn)
     // 当调用副作用函数之前将当前副作用函数压入栈中
     activeEffect = effectFn
@@ -92,42 +91,50 @@ function trigger(target, key, type) {
   // effects && effects.forEach(fn => fn())
 }
 const ITERATE_KEY = Symbol()
-const px = new Proxy(obj, {
-  // 拦截读取操作
-  get(target, key, receiver) {
-    // 收集依赖
-    track(target, key)
-    return Reflect.get(target, key, receiver)
-  },
-  set(target, key, newVal, receiver) {
-    const oldVal = target[key]
-    const type = Object.prototype.hasOwnProperty.call(target, key) ? TriggerType.Set : TriggerType.ADD
-    target[key] = newVal
-    // 设置属性值
-    const res = Reflect.set(target, key, newVal, receiver)
-    // 触发依赖
-    if (oldVal !== newVal && (oldVal === oldVal || newVal === newVal)) {
-      trigger(target, key, type)
+
+export function reactive (obj) {
+  return new Proxy(obj, {
+    // 拦截读取操作
+    get(target, key, receiver) {
+      if (key === 'raw') {
+        return target
+      }
+      // 收集依赖
+      track(target, key)
+      return Reflect.get(target, key, receiver)
+    },
+    set(target, key, newVal, receiver) {
+      const oldVal = target[key]
+      const type = Object.prototype.hasOwnProperty.call(target, key) ? TriggerType.Set : TriggerType.ADD
+      // 设置属性值
+      const res = Reflect.set(target, key, newVal, receiver)
+      // 触发依赖
+      if (target === receiver.raw) {
+        if (oldVal !== newVal && (oldVal === oldVal || newVal === newVal)) {
+          trigger(target, key, type)
+        }
+      }
+      return res
+    },
+    ownKeys(target) {
+      track(target, ITERATE_KEY)
+      return Reflect.ownKeys(target)
+    },
+    has(target, key) {
+      track(target, key)
+      return Reflect.has(target, key)
+    },
+    deleteProperty(target, key) {
+      const hadKey = Object.prototype.hasOwnProperty.call(target, key)
+      const res = Reflect.deleteProperty(target, key)
+      if (hadKey && res) {
+        trigger(target, key, TriggerType.DELETE)
+      }
+      return res
     }
-    return res
-  },
-  ownKeys(target) {
-    track(target, ITERATE_KEY)
-    return Reflect.ownKeys(target)
-  },
-  has(target, key) {
-    track(target, key)
-    return Reflect.has(target, key)
-  },
-  deleteProperty(target, key) {
-    const hadKey = Object.prototype.hasOwnProperty.call(target, key)
-    const res = Reflect.deleteProperty(target, key)
-    if (hadKey && res) {
-      trigger(target, key, TriggerType.DELETE)
-    }
-    return res
-  }
-})
+  })
+  
+}
 
 const jobQueue = new Set()
 const p = Promise.resolve()
@@ -222,28 +229,24 @@ function watch(source, cb, options = {}) {
   }
 }
 
-let finalData
-let fetchA = true
-watch(obj, async (newValue, oldValue, onInvalidate) => {
-  // 定义一个标志，代表当前副作用函数是否过期，默认为 false ，代表没有过期
-  let expired = false
-  onInvalidate(() => {
-    expired = true
-  })
-  const requestUrl = fetchA
-    ? 'https://www.fastmock.site/mock/eb259ab82df9fa23480763b128dd0b4a/api/api/use-list1'
-    : 'https://www.fastmock.site/mock/eb259ab82df9fa23480763b128dd0b4a/api/api/use-list2'
+// let finalData
+// let fetchA = true
+// watch(obj, async (newValue, oldValue, onInvalidate) => {
+//   // 定义一个标志，代表当前副作用函数是否过期，默认为 false ，代表没有过期
+//   let expired = false
+//   onInvalidate(() => {
+//     expired = true
+//   })
+//   const requestUrl = fetchA
+//     ? 'https://www.fastmock.site/mock/eb259ab82df9fa23480763b128dd0b4a/api/api/use-list1'
+//     : 'https://www.fastmock.site/mock/eb259ab82df9fa23480763b128dd0b4a/api/api/use-list2'
 
-  const res = await fetch(requestUrl).then((res) => {
-    return res.json()
-  })
-  if (!expired) {
-    finalData = res.body.userList
-    console.log(finalData)
-  }
-})
+//   const res = await fetch(requestUrl).then((res) => {
+//     return res.json()
+//   })
+//   if (!expired) {
+//     finalData = res.body.userList
+//     console.log(finalData)
+//   }
+// })
 
-effect(() => {
-  console.log('effect 执行了')
-  console.log(px.foo)
-})

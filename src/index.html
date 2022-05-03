@@ -8,6 +8,23 @@
 </head>
 <body>
   
-  <script src="./demo.js"></script>
+<script type="module">
+  import { reactive, effect } from './reactive.js'
+
+  const obj = {}
+  const proto = { bar: 1 }
+  const child = reactive(obj)
+  const parent = reactive(proto)
+  // 使用 parent 作为 child 的原型
+  Object.setPrototypeOf(child, parent)
+
+  
+  effect(() => {
+    console.log('effect 执行了')
+    console.log(child.bar)
+  })
+  child.bar = 2
+
+</script>
 </body>
 </html>
