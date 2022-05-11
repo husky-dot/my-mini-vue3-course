@@ -9,11 +9,16 @@
 <body>
   
 <script type="module">
-  import { effect, shallowReadonly } from './reactive.js'
+  import { effect, reactive } from './reactive.js'
+  
+  const arr = reactive(['foo'])
 
-  const obj = shallowReadonly({ foo: { bar: 1} })
-  obj.foo.bar = 2
+  effect(() => {
+    console.log('effect 被调用')
+    console.log(arr[0])
+  })
 
+  arr.length = 2
 </script>
 </body>
 </html>

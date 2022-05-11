@@ -2,9 +2,8 @@ const bucket = new WeakMap()
 const TriggerType = {
   SET: 'SET',
   ADD: 'ADD',
-  DELETE: 'DELETE'
+  DELETE: 'DELETE',
 }
-
 
 // 用一个全局变量存储当前激活的 effect 函数
 let activeEffect
@@ -65,18 +64,38 @@ function track(target, key) {
   activeEffect.deps.push(deps)
 }
 
-function trigger(target, key, type) {
+function trigger(target, key, type, newVal) {
   const desMap = bucket.get(target)
   if (!desMap) return
   const effects = desMap.get(key)
   const iterateEffects = desMap.get(ITERATE_KEY)
   const effectToRun = new Set()
-  effects && effects.forEach(effectFn => {
-    effectToRun.add(effectFn)
-  })
-  if (type === TriggerType.ADD || type === TriggerType.DELETE) {
-    iterateEffects && iterateEffects.forEach(effectFn => {
+  effects &&
+    effects.forEach((effectFn) => {
       effectToRun.add(effectFn)
+    })
+  if (type === TriggerType.ADD || type === TriggerType.DELETE) {
+    iterateEffects &&
+      iterateEffects.forEach((effectFn) => {
+        effectToRun.add(effectFn)
+      })
+  }
+  if (type === TriggerType.ADD && Array.isArray(target)) {
+    const lengthEffects = desMap.get('length')
+    lengthEffects &&
+    lengthEffects.forEach((effectFn) => {
+      effectToRun.add(effectFn)
+    })
+  }
+  if (Array.isArray(target) && key === 'length') {
+    desMap.forEach((effects, key) => {
+      if (key >= newVal) {
+        effects.forEach((effectFn) => {
+          if (effectFn !== activeEffect) {
+            effectToRun.add(effectFn)
+          }
+        })
+      }
     })
   }
   effectToRun.forEach((effectFn) => {
@@ -92,31 +111,28 @@ function trigger(target, key, type) {
 }
 const ITERATE_KEY = Symbol()
 
-
-export function reactive (obj) {
+export function reactive(obj) {
   return createReactive(obj)
 }
 
-export function shallowReactive (obj) {
+export function shallowReactive(obj) {
   return createReactive(obj, true)
 }
-export function readonly (obj) {
+export function readonly(obj) {
   return createReactive(obj, false, true)
 }
-export function shallowReadonly (obj) {
+export function shallowReadonly(obj) {
   return createReactive(obj, true, true)
 }
 
-
-
-export function createReactive (obj, isShallow = false, isReadonly = false) {
+export function createReactive(obj, isShallow = false, isReadonly = false) {
   return new Proxy(obj, {
     // 拦截读取操作
     get(target, key, receiver) {
       if (key === 'raw') {
         return target
       }
-      if (!readonly) {
+      if (!isReadonly) {
         // 收集依赖
         track(target, key)
       }
@@ -137,13 +153,19 @@ export function createReactive (obj, isShallow = false, isReadonly = false) {
         return true
       }
       const oldVal = target[key]
-      const type = Object.prototype.hasOwnProperty.call(target, key) ? TriggerType.Set : TriggerType.ADD
+      const type = Array.isArray(target)
+        ? Number(key) < target.length
+          ? TriggerType.Set
+          : TriggerType.ADD
+        : Object.prototype.hasOwnProperty.call(target, key)
+        ? TriggerType.Set
+        : TriggerType.ADD
       // 设置属性值
       const res = Reflect.set(target, key, newVal, receiver)
       // 触发依赖
       if (target === receiver.raw) {
         if (oldVal !== newVal && (oldVal === oldVal || newVal === newVal)) {
-          trigger(target, key, type)
+          trigger(target, key, type, newVal)
         }
       }
       return res
@@ -167,9 +189,8 @@ export function createReactive (obj, isShallow = false, isReadonly = false) {
         trigger(target, key, TriggerType.DELETE)
       }
       return res
-    }
+    },
   })
-  
 }
 
 const jobQueue = new Set()
@@ -285,4 +306,3 @@ function watch(source, cb, options = {}) {
 //     console.log(finalData)
 //   }
 // })
-
