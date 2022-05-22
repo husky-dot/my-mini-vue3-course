@@ -65,46 +65,50 @@ function track(target, key) {
 }
 
 function trigger(target, key, type, newVal) {
-  const desMap = bucket.get(target)
-  if (!desMap) return
-  const effects = desMap.get(key)
-  const iterateEffects = desMap.get(ITERATE_KEY)
-  const effectToRun = new Set()
+  const depsMap = bucket.get(target)
+  if (!depsMap) return
+  const effects = depsMap.get(key)
+  const effectsToRun = new Set()
+
   effects &&
     effects.forEach((effectFn) => {
-      effectToRun.add(effectFn)
+      effectsToRun.add(effectFn)
     })
-  if (type === TriggerType.ADD || type === TriggerType.DELETE) {
+  if (type === 'ADD' || type === 'DELETE') {
+    const iterateEffects = depsMap.get(ITERATE_KEY)
     iterateEffects &&
       iterateEffects.forEach((effectFn) => {
-        effectToRun.add(effectFn)
+        if (effectFn !== activeEffect) {
+          effectsToRun.add(effectFn)
+        }
       })
   }
   if (type === TriggerType.ADD && Array.isArray(target)) {
-    const lengthEffects = desMap.get('length')
+    const lengthEffects = depsMap.get('length')
     lengthEffects &&
-    lengthEffects.forEach((effectFn) => {
-      effectToRun.add(effectFn)
-    })
+      lengthEffects.forEach((effectFn) => {
+        if (effectFn !== activeEffect) {
+          effectsToRun.add(effectFn)
+        }
+      })
   }
+
   if (Array.isArray(target) && key === 'length') {
-    desMap.forEach((effects, key) => {
+    depsMap.forEach((effects, key) => {
       if (key >= newVal) {
         effects.forEach((effectFn) => {
           if (effectFn !== activeEffect) {
-            effectToRun.add(effectFn)
+            effectsToRun.add(effectFn)
           }
         })
       }
     })
   }
-  effectToRun.forEach((effectFn) => {
+  effectsToRun.forEach((effectFn) => {
     if (effectFn.options.scheduler) {
       effectFn.options.scheduler(effectFn)
     } else {
-      if (effectFn !== activeEffect) {
-        effectFn()
-      }
+      effectFn()
     }
   })
   // effects && effects.forEach(fn => fn())
@@ -171,7 +175,7 @@ export function createReactive(obj, isShallow = false, isReadonly = false) {
       return res
     },
     ownKeys(target) {
-      track(target, ITERATE_KEY)
+      track(target, Array.isArray(target) ? 'length' : ITERATE_KEY)
       return Reflect.ownKeys(target)
     },
     has(target, key) {
