@@ -14,11 +14,10 @@
   const arr = reactive(['foo'])
 
   effect(() => {
-    console.log('effect 被调用')
-    console.log(arr[0])
+    for (const key in arr) {
+      console.log(key)
+    }
   })
-
-  arr.length = 2
 </script>
 </body>
 </html>
