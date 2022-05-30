@@ -47,15 +47,13 @@ function cleanup(effectFn) {
 function track(target, key) {
   // 没有 activeEffect 直接  return
   if (!activeEffect) return
-  let desMap = bucket.get(target)
-  if (!desMap) {
-    desMap = new Map()
-    bucket.set(target, desMap)
+  let depsMap = bucket.get(target)
+  if (!depsMap) {
+    bucket.set(target, (depsMap = new Map()))
   }
-  let deps = desMap.get(key)
+  let deps = depsMap.get(key)
   if (!deps) {
-    deps = new Set()
-    desMap.set(key, deps)
+    depsMap.set(key, (deps = new Set()))
   }
   // 把当前激活的副作用函数添加到依赖集合 deps 中
   deps.add(activeEffect)
@@ -68,13 +66,15 @@ function trigger(target, key, type, newVal) {
   const depsMap = bucket.get(target)
   if (!depsMap) return
   const effects = depsMap.get(key)
-  const effectsToRun = new Set()
 
+  const effectsToRun = new Set()
   effects &&
     effects.forEach((effectFn) => {
-      effectsToRun.add(effectFn)
+      if (effectFn !== activeEffect) {
+        effectsToRun.add(effectFn)
+      }
     })
-  if (type === 'ADD' || type === 'DELETE') {
+  if (type === TriggerType.ADD || TriggerType.DELETE) {
     const iterateEffects = depsMap.get(ITERATE_KEY)
     iterateEffects &&
       iterateEffects.forEach((effectFn) => {

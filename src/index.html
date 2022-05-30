@@ -9,15 +9,16 @@
   <body>
     <script type="module">
       import { effect, reactive } from './reactive.js'
-
-      const arr = reactive(['foo'])
+      const arr = reactive([1, 2])
 
       effect(() => {
-        for (const key in arr) {
-          console.log(key)
+        console.log('effect 执行了')
+        for (const val of arr) {
+          console.log(val)
         }
       })
-      arr[1] = 'bar' // length = 2
+
+      arr[1] = 'bar'
       arr.length = 0
     </script>
   </body>
