@@ -136,7 +136,7 @@ export function createReactive(obj, isShallow = false, isReadonly = false) {
       if (key === 'raw') {
         return target
       }
-      if (!isReadonly) {
+      if (!isReadonly && typeof key !== 'symbol') {
         // 收集依赖
         track(target, key)
       }
