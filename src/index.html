@@ -13,14 +13,11 @@
 
       effect(() => {
         console.log('effect 执行了')
-        for (const val of arr.values()) {
-          console.log(val)
-        }
+        console.log(arr.includes(1))
       })
 
-      arr[1] = 'bar'
-      arr.length = 0
-
+      arr[0] = 3
+     
     </script>
   </body>
 </html>
