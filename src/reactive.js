@@ -115,8 +115,14 @@ function trigger(target, key, type, newVal) {
 }
 const ITERATE_KEY = Symbol()
 
+const reactiveMap = new Map()
+
 export function reactive(obj) {
-  return createReactive(obj)
+  const existionProxy = reactiveMap.get(obj)
+  if (existionProxy) return existionProxy
+  const proxy = createReactive(obj)
+  reactiveMap.set(obj, proxy)
+  return proxy
 }
 
 export function shallowReactive(obj) {
@@ -129,12 +135,28 @@ export function shallowReadonly(obj) {
   return createReactive(obj, true, true)
 }
 
+const arrayInstrumentations = {}
+
+;['includes', 'indexOf', 'lastIndexOf'].forEach((method) => {
+  const originMethod = Array.prototype[method]
+  arrayInstrumentations[method] = function (...args) {
+    let res = originMethod.apply(this, args)
+    if (res === false || res === -1) {
+      res = originMethod.apply(this.raw, args)
+    }
+    return res
+  }
+})
+
 export function createReactive(obj, isShallow = false, isReadonly = false) {
   return new Proxy(obj, {
     // 拦截读取操作
     get(target, key, receiver) {
       if (key === 'raw') {
         return target
+      }
+      if (Array.isArray(target) && arrayInstrumentations.hasOwnProperty(key)) {
+        return Reflect.get(arrayInstrumentations, key, receiver)
       }
       if (!isReadonly && typeof key !== 'symbol') {
         // 收集依赖
