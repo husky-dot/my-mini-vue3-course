@@ -152,26 +152,30 @@ export function createReactive(obj, isShallow = false, isReadonly = false) {
   return new Proxy(obj, {
     // 拦截读取操作
     get(target, key, receiver) {
-      if (key === 'raw') {
-        return target
+      if (key === 'size') {
+        return Reflect.get(target, key, target)
       }
-      if (Array.isArray(target) && arrayInstrumentations.hasOwnProperty(key)) {
-        return Reflect.get(arrayInstrumentations, key, receiver)
-      }
-      if (!isReadonly && typeof key !== 'symbol') {
-        // 收集依赖
-        track(target, key)
-      }
-      // 调用 reactive 将结果包装成响应式数据并返回
-      const res = Reflect.get(target, key, receiver)
-      // 如果是浅响应，则直接返回原始值
-      if (isShallow) {
-        return res
-      }
-      if (typeof res === 'object' && res !== null) {
-        return isReadonly ? readonly(res) : reactive(res)
-      }
-      return res
+      return target[key].bind(target)
+      // if (key === 'raw') {
+      //   return target
+      // }
+      // if (Array.isArray(target) && arrayInstrumentations.hasOwnProperty(key)) {
+      //   return Reflect.get(arrayInstrumentations, key, receiver)
+      // }
+      // if (!isReadonly && typeof key !== 'symbol') {
+      //   // 收集依赖
+      //   track(target, key)
+      // }
+      // // 调用 reactive 将结果包装成响应式数据并返回
+      // const res = Reflect.get(target, key, receiver)
+      // // 如果是浅响应，则直接返回原始值
+      // if (isShallow) {
+      //   return res
+      // }
+      // if (typeof res === 'object' && res !== null) {
+      //   return isReadonly ? readonly(res) : reactive(res)
+      // }
+      // return res
     },
     set(target, key, newVal, receiver) {
       if (isReadonly) {

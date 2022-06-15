@@ -9,23 +9,9 @@
   <body>
     <script type="module">
       import { effect, reactive } from './reactive.js'
-     
-      const obj = {}
-      const arr = reactive([obj])
 
-      console.log(arr.lastIndexOf(obj))
-
-
-     
-      // 让 O 的值为 ? ToObject(this value)
-
-      // 10.重复, while 循环(条件 k < len)
-      // a. 让 elementK 的值为 ? Get(O, !ToString(F(K)) 的结果。
-      // b. 如果 sameValueSero(searchElement, elementK) 是 true，则返回 true
-      // c. 将 k 设置为 k+1
-
-
-
+      const p = reactive(new Set([1, 2, 3]))
+      console.log(p.size)
     </script>
   </body>
 </html>
