@@ -11,7 +11,13 @@
       import { effect, reactive } from './reactive.js'
 
       const p = reactive(new Set([1, 2, 3]))
-      console.log(p.size)
+
+      effect(() => {
+        console.log(p.size)
+      })
+
+      p.delete(1)
+ 
     </script>
   </body>
 </html>

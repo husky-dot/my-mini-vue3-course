@@ -148,14 +148,37 @@ const arrayInstrumentations = {}
   }
 })
 
+const mutableInstrumentations = {
+  add(key) {
+    const target = this.raw
+    const hadKey = target.has(key)
+    if (!hadKey) {
+      const res = target.add(key)
+      trigger(target, key, 'ADD')
+      return res
+    }
+  },
+  delete (key) {
+    const target = this.raw
+    const hadKey = target.has(key)
+    if (hadKey) {
+      const res = target.delete(key)
+      trigger(target, key, 'DELETE')
+      return res
+    }
+  }
+}
+
 export function createReactive(obj, isShallow = false, isReadonly = false) {
   return new Proxy(obj, {
     // 拦截读取操作
     get(target, key, receiver) {
+      if (key === 'raw') return target
       if (key === 'size') {
+        track(target, ITERATE_KEY)
         return Reflect.get(target, key, target)
       }
-      return target[key].bind(target)
+      return mutableInstrumentations[key]
       // if (key === 'raw') {
       //   return target
       // }
