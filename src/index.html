@@ -10,14 +10,18 @@
     <script type="module">
       import { effect, reactive } from './reactive.js'
 
-      const p = reactive(new Set([1, 2, 3]))
+     const m = new Map()
+     const p1 = reactive(m)
 
-      effect(() => {
-        console.log(p.size)
-      })
+     const p2 = reactive(new Map())
 
-      p.delete(1)
- 
+     p1.set('p2', p2)
+
+     effect(() => {
+      console.log(m.get('p2').size)
+     })
+
+     m.get('p2').set('foo', 1)
     </script>
   </body>
 </html>

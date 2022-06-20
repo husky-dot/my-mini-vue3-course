@@ -166,6 +166,27 @@ const mutableInstrumentations = {
       trigger(target, key, 'DELETE')
       return res
     }
+  },
+  get (key) {
+    const target = this.raw
+    const had = target.has(key)
+    track(target, key)
+    if (had) {
+      const res = target.get(key)
+      return typeof res === 'object' ? reactive(res) : res
+    }
+  },
+  set (key, value) {
+    const target = this.raw
+    const had = target.has(key)
+    const oldValue = target.get(key)
+    const rawValue = value.raw || value
+    target.set(key, rawValue)
+    if (!had) {
+      trigger(target, key, 'ADD')
+    } else if (oldValue !== value || (oldValue === oldValue && value === value)) {
+      trigger(target, key, 'SET')
+    }
   }
 }
 
