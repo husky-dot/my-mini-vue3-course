@@ -74,7 +74,9 @@ function trigger(target, key, type, newVal) {
         effectsToRun.add(effectFn)
       }
     })
-  if (type === TriggerType.ADD || type === TriggerType.DELETE |) {
+  if (type === TriggerType.ADD || type === TriggerType.DELETE || (
+    type === 'SET' && Object.prototype.toString.call(target) === '[object Map]'
+  )) {
     const iterateEffects = depsMap.get(ITERATE_KEY)
     iterateEffects &&
       iterateEffects.forEach((effectFn) => {
@@ -187,6 +189,15 @@ const mutableInstrumentations = {
     } else if (oldValue !== value || (oldValue === oldValue && value === value)) {
       trigger(target, key, 'SET')
     }
+  },
+  forEach( callback, thisArg) {
+    const wrap = (val) => typeof val === 'object' ? reactive(val) : val
+    const target = this.raw
+    track(target, ITERATE_KEY)
+
+    target.forEach((v, k) => {
+      callback.call(thisArg, wrap(v), wrap(k), this)
+    })
   }
 }
 
