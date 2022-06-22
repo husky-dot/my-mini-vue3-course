@@ -74,7 +74,7 @@ function trigger(target, key, type, newVal) {
         effectsToRun.add(effectFn)
       }
     })
-  if (type === TriggerType.ADD || TriggerType.DELETE) {
+  if (type === TriggerType.ADD || type === TriggerType.DELETE |) {
     const iterateEffects = depsMap.get(ITERATE_KEY)
     iterateEffects &&
       iterateEffects.forEach((effectFn) => {
