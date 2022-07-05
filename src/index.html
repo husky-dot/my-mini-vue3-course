@@ -9,15 +9,20 @@
   <body>
     <script type="module">
       import { effect, reactive } from './reactive.js'
-
-      const m = new Map([
+ 
+      const p = reactive( new Map([
         ['key1', 'value1'],
         ['key2', 'value2']
-      ])
+      ]))
 
-      for (const [key, value] of m.entries()) {
-        console.log(key, value)
-      }
+      effect(() => {
+        for (const [key, value] of p.entries()) {
+          console.log(key, value)
+        }
+      })
+
+      p.set('key3', 'value3')
+
     </script>
   </body>
 </html>
