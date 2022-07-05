@@ -74,9 +74,12 @@ function trigger(target, key, type, newVal) {
         effectsToRun.add(effectFn)
       }
     })
-  if (type === TriggerType.ADD || type === TriggerType.DELETE || (
-    type === 'SET' && Object.prototype.toString.call(target) === '[object Map]'
-  )) {
+  if (
+    type === TriggerType.ADD ||
+    type === TriggerType.DELETE ||
+    (type === 'SET' &&
+      Object.prototype.toString.call(target) === '[object Map]')
+  ) {
     const iterateEffects = depsMap.get(ITERATE_KEY)
     iterateEffects &&
       iterateEffects.forEach((effectFn) => {
@@ -160,7 +163,7 @@ const mutableInstrumentations = {
       return res
     }
   },
-  delete (key) {
+  delete(key) {
     const target = this.raw
     const hadKey = target.has(key)
     if (hadKey) {
@@ -169,7 +172,7 @@ const mutableInstrumentations = {
       return res
     }
   },
-  get (key) {
+  get(key) {
     const target = this.raw
     const had = target.has(key)
     track(target, key)
@@ -178,7 +181,7 @@ const mutableInstrumentations = {
       return typeof res === 'object' ? reactive(res) : res
     }
   },
-  set (key, value) {
+  set(key, value) {
     const target = this.raw
     const had = target.has(key)
     const oldValue = target.get(key)
@@ -186,18 +189,44 @@ const mutableInstrumentations = {
     target.set(key, rawValue)
     if (!had) {
       trigger(target, key, 'ADD')
-    } else if (oldValue !== value || (oldValue === oldValue && value === value)) {
+    } else if (
+      oldValue !== value ||
+      (oldValue === oldValue && value === value)
+    ) {
       trigger(target, key, 'SET')
     }
   },
-  forEach( callback, thisArg) {
-    const wrap = (val) => typeof val === 'object' ? reactive(val) : val
+  forEach(callback, thisArg) {
+    const wrap = (val) => (typeof val === 'object' ? reactive(val) : val)
     const target = this.raw
     track(target, ITERATE_KEY)
 
     target.forEach((v, k) => {
       callback.call(thisArg, wrap(v), wrap(k), this)
     })
+  },
+  [Symbol.iterator]: iterationMethod,
+  entries: iterationMethod,
+}
+
+function iterationMethod() {
+  const target = this.raw
+  const itr = target[Symbol.iterator]()
+  const wrap = (val) => (typeof val === 'object' ? reactive(val) : val)
+
+  track(target, ITERATE_KEY)
+
+  return {
+    next() {
+      const { value, done } = itr.next()
+      return {
+        value: value ? [wrap(value[0]), wrap(value[1])] : value,
+        done,
+      }
+    },
+    [Symbol.iterator]() {
+      return this
+    },
   }
 }
 
