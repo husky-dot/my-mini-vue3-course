@@ -9,20 +9,18 @@
   <body>
     <script type="module">
       import { effect, reactive } from './reactive.js'
- 
-      const p = reactive( new Map([
-        ['key1', 'value1'],
-        ['key2', 'value2']
-      ]))
 
+      const wrapper = {
+        value: 'vue',
+      }
+
+      const name = reactive(wrapper)
+    
       effect(() => {
-        for (const key of p.keys()) {
-          console.log(key)
-        }
+        console.log(name.value)
       })
 
-      p.set('key3', 'value3')
-
+      name.value = 'vue3'
     </script>
   </body>
 </html>
