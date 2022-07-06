@@ -16,8 +16,8 @@
       ]))
 
       effect(() => {
-        for (const [key, value] of p.entries()) {
-          console.log(key, value)
+        for (const key of p.keys()) {
+          console.log(key)
         }
       })
 

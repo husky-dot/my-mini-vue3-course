@@ -88,6 +88,19 @@ function trigger(target, key, type, newVal) {
         }
       })
   }
+  if (
+    (type === TriggerType.ADD || type === TriggerType.DELETE) &&
+    Object.prototype.toString.call(target) === '[object Map]'
+  ) {
+    const iterateEffects = depsMap.get(MAP_KEY_ITERATE_KEY)
+    iterateEffects &&
+      iterateEffects.forEach((effectFn) => {
+        if (effectFn !== activeEffect) {
+          effectsToRun.add(effectFn)
+        }
+      })
+  }
+
   if (type === TriggerType.ADD && Array.isArray(target)) {
     const lengthEffects = depsMap.get('length')
     lengthEffects &&
@@ -207,6 +220,8 @@ const mutableInstrumentations = {
   },
   [Symbol.iterator]: iterationMethod,
   entries: iterationMethod,
+  values: valuesIterationMethod,
+  keys: keysIterationMethod,
 }
 
 function iterationMethod() {
@@ -221,6 +236,51 @@ function iterationMethod() {
       const { value, done } = itr.next()
       return {
         value: value ? [wrap(value[0]), wrap(value[1])] : value,
+        done,
+      }
+    },
+    [Symbol.iterator]() {
+      return this
+    },
+  }
+}
+function valuesIterationMethod() {
+  const target = this.raw
+
+  const itr = target.values()
+
+  const wrap = (val) => (typeof val === 'object' ? reactive(val) : val)
+
+  track(target, ITERATE_KEY)
+
+  return {
+    next() {
+      const { value, done } = itr.next()
+      return {
+        value: wrap(value),
+        done,
+      }
+    },
+    [Symbol.iterator]() {
+      return this
+    },
+  }
+}
+const MAP_KEY_ITERATE_KEY = Symbol()
+function keysIterationMethod() {
+  const target = this.raw
+
+  const itr = target.keys()
+
+  const wrap = (val) => (typeof val === 'object' ? reactive(val) : val)
+
+  track(target, MAP_KEY_ITERATE_KEY)
+
+  return {
+    next() {
+      const { value, done } = itr.next()
+      return {
+        value: wrap(value),
         done,
       }
     },
