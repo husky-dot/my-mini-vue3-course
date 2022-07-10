@@ -8,19 +8,15 @@
   </head>
   <body>
     <script type="module">
-      import { effect, reactive } from './reactive.js'
+      import { effect, ref } from './reactive.js'
 
-      const wrapper = {
-        value: 'vue',
-      }
+      const refVal = ref(1)
 
-      const name = reactive(wrapper)
-    
       effect(() => {
-        console.log(name.value)
+        console.log(refVal.value)
       })
 
-      name.value = 'vue3'
+      refVal.value = '2'
     </script>
   </body>
 </html>
