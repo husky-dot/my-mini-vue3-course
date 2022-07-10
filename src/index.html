@@ -8,15 +8,18 @@
   </head>
   <body>
     <script type="module">
-      import { effect, ref } from './reactive.js'
+      import { effect, reactive, ref } from './reactive.js'
 
       const refVal = ref(1)
+      const refVal2 = reactive({
+        value: 1
+      })
 
       effect(() => {
         console.log(refVal.value)
       })
 
-      refVal.value = '2'
+      refVal.value = 2
     </script>
   </body>
 </html>

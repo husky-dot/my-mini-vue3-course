@@ -143,6 +143,16 @@ export function reactive(obj) {
   return proxy
 }
 
+export function ref (val) {
+  const wrapper = {
+    value: val
+  }
+  Object.defineProperty(wrapper, '__v_isRef',  {
+    value: true
+  })
+  return reactive(wrapper)
+}
+
 export function shallowReactive(obj) {
   return createReactive(obj, true)
 }
