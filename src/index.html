@@ -8,12 +8,14 @@
   </head>
   <body>
     <script type="module">
-      import { effect, reactive, ref, toRef } from './reactive.js'
+      import { effect, reactive, ref, toRefs } from './reactive.js'
 
       const obj = reactive({ foo: 1, bar: 2})
 
-      const refFoo = toRef(obj, 'foo')
-      refFoo.value = 100
+      const newObj = {...toRefs(obj)}
+
+      console.log(newObj.foo.value)
+      console.log(newObj.bar.value)
     </script>
   </body>
 </html>
