@@ -176,6 +176,22 @@ export function toRefs (obj) {
   return ret
 }
 
+export function proxRefs(target) {
+  return new Proxy(target, {
+    get (target, key, receiver) {
+      const value = Reflect.get(target, key, receiver)
+      return value.__v_isRef ? value.value : value
+    },
+    set (target, key, newValue, receiver) {
+      const value = target[key]
+      if (value.__v_isRef ) {
+        value.value = newValue
+      }
+      return Reflect.set(target, key, newValue, receiver)
+    }
+  })
+}
+
 export function shallowReactive(obj) {
   return createReactive(obj, true)
 }
