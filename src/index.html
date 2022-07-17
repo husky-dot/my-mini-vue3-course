@@ -7,13 +7,15 @@
     <title>Document</title>
   </head>
   <body>
+    <div id="app"></div>
     <script type="module">
       import { effect, reactive, ref, toRefs, proxRefs } from './reactive.js'
 
-      const obj = reactive({ foo: 1, bar: 2})
+      function render(domString, container) {
+        container.innerHTML = domString
+      }
 
-      const newObj = proxRefs({...toRefs(obj)})
-
+      render('<h1>Hello</h1>', document.getElementById('app'))
     </script>
   </body>
 </html>
