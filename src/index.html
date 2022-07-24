@@ -12,18 +12,22 @@
     <script>
       const { effect, ref } = VueReactivity
 
-      function render(domString, container) {
-        container.innerHTML = domString
+      function createRenderer() {
+        function render(vnode, container) {
+          if (vnode) {
+            // 新 vnode 存在，将其与旧 vnode  一起传递给 patch 函数，进行打补丁
+            patch(container._vnode, vnode, container)
+          } else {
+            if (container._vnode) {
+              container.innerHTML = ''
+            }
+          }
+          container._vnode = vnode
+        }
+        return {
+          render,
+        }
       }
-
-      const count = ref(1)
-      effect(() => {
-        render(`<h1>${count.value}</h1>`, document.getElementById('app'))
-      })
-
-      setTimeout(() => {
-        count.value++
-      }, 2500)
     </script>
   </body>
 </html>
