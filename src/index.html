@@ -12,7 +12,23 @@
     <script>
       const { effect, ref } = VueReactivity
 
-      function createRenderer() {
+      function createRenderer(options) {
+        const { createElement, setElement, insert } = options
+
+        function mountElement(vnode, container) {
+          const el = createElement(vnode.type)
+          if (typeof vnode.children === 'string') {
+            setElement(el, vnode.children)
+          }
+          insert(el, container)
+        }
+        function patch(n1, n2, container) {
+          if (!n1) {
+            mountElement(n2, container)
+          } else {
+            // 打补丁了，后面在来实现
+          }
+        }
         function render(vnode, container) {
           if (vnode) {
             // 新 vnode 存在，将其与旧 vnode  一起传递给 patch 函数，进行打补丁
@@ -28,6 +44,33 @@
           render,
         }
       }
+
+      const vnode = {
+        type: 'h3',
+        children: 'hello',
+      }
+
+      const renderer = createRenderer({
+        createElement(tag) {
+          console.log(`创建元素 ${tag}`)
+          return {
+            tag,
+          }
+        },
+        setElement(el, text) {
+          console.log(`设置${JSON.stringify(el)} 的文字内容： ${text}`)
+          el.text = text
+        },
+        insert(el, parent, anchor = null) {
+          console.log(
+            `将 ${JSON.stringify(el)} 添加到 ${JSON.stringify(parent)} 下`
+          )
+          parent.children = el
+        },
+      })
+
+      const container = { type: 'root' }
+      renderer.render(vnode, container)
     </script>
   </body>
 </html>
