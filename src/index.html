@@ -19,12 +19,20 @@
           const el = createElement(vnode.type)
           if (typeof vnode.children === 'string') {
             setElement(el, vnode.children)
-          } else if (Array.isArray(vnode.children)) {
- 
-            vnode.children.forEach((child) => {
+          }else if (Array.isArray(vnode.children)) {
+            vnode.children.forEach(child => {
               patch(null, child, el)
             })
           }
+
+          if (vnode.props) {
+            for (const key in vnode.props) {
+              el[key] = vnode.props[key]
+              // el.setAttribute(key, vnode.props[key])
+            }
+          }
+           
+
           insert(el, container)
         }
         function patch(n1, n2, container) {
@@ -52,6 +60,9 @@
 
       const vnode = {
         type: 'div',
+        props: {
+          id: 'foo'
+        },
         children: [
           {
             type: 'p',
