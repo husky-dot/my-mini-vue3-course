@@ -19,8 +19,8 @@
           const el = createElement(vnode.type)
           if (typeof vnode.children === 'string') {
             setElement(el, vnode.children)
-          }else if (Array.isArray(vnode.children)) {
-            vnode.children.forEach(child => {
+          } else if (Array.isArray(vnode.children)) {
+            vnode.children.forEach((child) => {
               patch(null, child, el)
             })
           }
@@ -31,7 +31,6 @@
               // el.setAttribute(key, vnode.props[key])
             }
           }
-           
 
           insert(el, container)
         }
@@ -58,17 +57,11 @@
         }
       }
 
-      const vnode = {
-        type: 'div',
-        props: {
-          id: 'foo'
+      const button = {
+        type: 'button',
+        pros: {
+          disabled: '',
         },
-        children: [
-          {
-            type: 'p',
-            children: 'hello',
-          },
-        ],
       }
 
       const renderer = createRenderer({
