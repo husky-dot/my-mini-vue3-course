@@ -27,8 +27,8 @@
 
           if (vnode.props) {
             for (const key in vnode.props) {
-              el[key] = vnode.props[key]
-              // el.setAttribute(key, vnode.props[key])
+              // el[key] = vnode.props[key]
+              el.setAttribute(key, vnode.props[key])
             }
           }
 
@@ -59,9 +59,10 @@
 
       const button = {
         type: 'button',
-        pros: {
+        props: {
           disabled: '',
         },
+        children: '按钮',
       }
 
       const renderer = createRenderer({
@@ -79,7 +80,7 @@
         },
       })
 
-      renderer.render(vnode, document.querySelector('#app'))
+      renderer.render(button, document.querySelector('#app'))
     </script>
   </body>
 </html>
