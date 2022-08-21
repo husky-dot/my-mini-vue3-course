@@ -12,8 +12,14 @@
     <script>
       const { effect, ref } = VueReactivity
 
+      function shouldSetAdProps(el, key, value) {
+        // 特殊处理
+        if (key === 'form' && el.tagName === 'INPUT') return false
+        return key in el
+      }
+
       function createRenderer(options) {
-        const { createElement, setElement, insert } = options
+        const { createElement, setElement, insert, patchProps } = options
 
         function mountElement(vnode, container) {
           const el = createElement(vnode.type)
@@ -27,8 +33,7 @@
 
           if (vnode.props) {
             for (const key in vnode.props) {
-              // el[key] = vnode.props[key]
-              el.setAttribute(key, vnode.props[key])
+              patchProps(el, key, null, vnode.props[key])
             }
           }
 
@@ -56,6 +61,9 @@
           render,
         }
       }
+      // <button disabled>按钮</button>
+      // <form id='form1'></form>
+      // <input form="form1" />
 
       const button = {
         type: 'button',
@@ -77,6 +85,18 @@
         // 用于在给定的 parent 下添加指定元素
         insert(el, parent, anchor = null) {
           parent.insertBefore(el, anchor)
+        },
+        patchProps(el, key, preValue, nextValue) {
+          if (shouldSetAdProps(el, key, nextValue)) {
+            const type = typeof el[key]
+            if (type === 'boolean' && nextValue === '') {
+              el[key] = true
+            } else {
+              el[key] = nextValue
+            }
+          } else {
+            el.setAttribute(key, vnode.props[key])
+          }
         },
       })
 
