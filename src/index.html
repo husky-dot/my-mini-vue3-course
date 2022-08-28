@@ -74,7 +74,7 @@
         props: {
           class: 'foo bar baz',
         },
-        children: 'p 标签'
+        children: 'p 标签',
       }
 
       const renderer = createRenderer({
@@ -91,7 +91,9 @@
           parent.insertBefore(el, anchor)
         },
         patchProps(el, key, preValue, nextValue) {
-          if (shouldSetAdProps(el, key, nextValue)) {
+          if (key === 'class') {
+            el.className = nextValue || ''
+          } else if (shouldSetAdProps(el, key, nextValue)) {
             const type = typeof el[key]
             if (type === 'boolean' && nextValue === '') {
               el[key] = true
