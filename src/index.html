@@ -61,16 +61,20 @@
           render,
         }
       }
-      // <button disabled>按钮</button>
-      // <form id='form1'></form>
-      // <input form="form1" />
-
-      const button = {
-        type: 'button',
+      // 方式一：
+      // <p class="foo bar"></p>
+      // const vnode = {
+      //   type: 'p',
+      //   props: {
+      //     class: 'foo bar'
+      //   }
+      // }
+      const vnode = {
+        type: 'p',
         props: {
-          disabled: '',
+          class: 'foo bar baz',
         },
-        children: '按钮',
+        children: 'p 标签'
       }
 
       const renderer = createRenderer({
@@ -100,7 +104,7 @@
         },
       })
 
-      renderer.render(button, document.querySelector('#app'))
+      renderer.render(vnode, document.querySelector('#app'))
     </script>
   </body>
 </html>
