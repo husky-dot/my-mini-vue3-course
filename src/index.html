@@ -69,6 +69,10 @@
       //     class: 'foo bar'
       //   }
       // }
+
+      // <p :class="arr"></p>
+      // cls = {foo: true, bar: false}
+      // arr =['foo bar', { baz: true}]
       const vnode = {
         type: 'p',
         props: {
@@ -92,7 +96,7 @@
         },
         patchProps(el, key, preValue, nextValue) {
           if (key === 'class') {
-            el.className = nextValue || ''
+            el.className = nextValue
           } else if (shouldSetAdProps(el, key, nextValue)) {
             const type = typeof el[key]
             if (type === 'boolean' && nextValue === '') {
