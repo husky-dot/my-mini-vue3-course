@@ -18,11 +18,18 @@
         return key in el
       }
 
+      function unmount(vnode) {
+        const parent = vnode.el.parentNode
+        if (parent) {
+          parent.removeChild(vnode.el)
+        }
+      }
+
       function createRenderer(options) {
         const { createElement, setElement, insert, patchProps } = options
 
         function mountElement(vnode, container) {
-          const el = createElement(vnode.type)
+          const el = (vnode.el = createElement(vnode.type))
           if (typeof vnode.children === 'string') {
             setElement(el, vnode.children)
           } else if (Array.isArray(vnode.children)) {
@@ -52,7 +59,7 @@
             patch(container._vnode, vnode, container)
           } else {
             if (container._vnode) {
-              container.innerHTML = ''
+              unmount(container._vnode)
             }
           }
           container._vnode = vnode
@@ -107,6 +114,10 @@
       })
 
       renderer.render(vnode, document.querySelector('#app'))
+
+      setTimeout(() => {
+        renderer.render(null, document.querySelector('#app'))
+      }, 5000)
     </script>
   </body>
 </html>
