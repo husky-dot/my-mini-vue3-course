@@ -47,10 +47,22 @@
           insert(el, container)
         }
         function patch(n1, n2, container) {
-          if (!n1) {
-            mountElement(n2, container)
-          } else {
-            // 打补丁了，后面在来实现
+          if (n1 && n1.type !== n2.type) {
+            unmount(n1)
+            n1 = null
+          }
+          const { type } = n2
+          if (typeof type === 'string') {
+            if (!n1) {
+              mountElement(n2, container)
+            } else {
+              // 打补丁了，后面在来实现
+              patchElement(n1, n2)
+            }
+          } else if (typeof type === 'object') {
+            // 描述的是一个组件
+          } else if (type === 'xxx') {
+            // 处理其它类型
           }
         }
         function render(vnode, container) {
@@ -115,7 +127,9 @@
 
       renderer.render(vnode, document.querySelector('#app'))
 
-
+      setTimeout(() => {
+        renderer.render(null, document.querySelector('#app'))
+      }, 5000)
     </script>
   </body>
 </html>
