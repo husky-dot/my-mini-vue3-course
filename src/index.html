@@ -80,33 +80,6 @@
           render,
         }
       }
-      // 方式一：
-      // <p class="foo bar"></p>
-      // const vnode = {
-      //   type: 'p',
-      //   props: {
-      //     class: 'foo bar'
-      //   }
-      // }
-      const vnode = {
-        type: 'p',
-        props: {
-          class: 'foo bar baz',
-          onClick: [
-            () => {
-              alert('click1')
-            },
-            () => {
-              alert('click2')
-            },
-            () => {
-              alert('click3')
-            },
-          ],
-        },
-        children: 'p 标签',
-      }
-
       const renderer = createRenderer({
         // 用于创建元素
         createElement(tag) {
@@ -130,7 +103,7 @@
               if (!invoker) {
                 invoker = el._vei[key] = (e) => {
                   if (Array.isArray(invoker.value)) {
-                    invoker.value.forEach(fn => fn(e))
+                    invoker.value.forEach((fn) => fn(e))
                   } else {
                     invoker.value(e)
                   }
@@ -158,7 +131,34 @@
         },
       })
 
-      renderer.render(vnode, document.querySelector('#app'))
+      const bol = ref(false)
+
+      effect(() => {
+        // 创建 vnode
+        const vnode = {
+          type: 'div',
+          props: bol.value
+            ? {
+                onClick: () => {
+                  alert('父元素 clicked')
+                },
+              }
+            : {},
+          children: [
+            {
+              type: 'p',
+              props: {
+                onClick: () => {
+                  bol.value = true
+                },
+              },
+              children: 'text',
+            },
+          ],
+        }
+        // 渲染 vnode
+        renderer.render(vnode, document.querySelector('#app'))
+      })
     </script>
   </body>
 </html>
