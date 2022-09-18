@@ -18,13 +18,6 @@
         return key in el
       }
 
-      function unmount(vnode) {
-        const parent = vnode.el.parentNode
-        if (parent) {
-          parent.removeChild(vnode.el)
-        }
-      }
-
       function createRenderer(options) {
         const { createElement, setElement, insert, patchProps } = options
 
@@ -45,6 +38,29 @@
           }
 
           insert(el, container)
+        }
+
+        function patchElement(n1, n2) {
+          const el = (n2.el = n1.el)
+          const oldProps = n1.props
+          const newProps = n2.props
+
+          for (const key in newProps) {
+            if (newProps[key] !== oldProps[key]) {
+              patchProps(el, key, oldProps[key], newProps[key])
+            }
+          }
+          for (const key in oldProps) {
+            if (!(key in newProps)) {
+              patchProps(el, key, oldProps[key], null)
+            }
+          }
+        }
+        function unmount(vnode) {
+          const parent = vnode.el.parentNode
+          if (parent) {
+            parent.removeChild(vnode.el)
+          }
         }
         function patch(n1, n2, container) {
           if (n1 && n1.type !== n2.type) {
@@ -102,6 +118,7 @@
             if (nextValue) {
               if (!invoker) {
                 invoker = el._vei[key] = (e) => {
+                  if (e.timeStamp < invoker.attached) return
                   if (Array.isArray(invoker.value)) {
                     invoker.value.forEach((fn) => fn(e))
                   } else {
@@ -109,6 +126,7 @@
                   }
                 }
                 invoker.value = nextValue
+                invoker.attached = performance.now()
                 el.addEventListener(name, invoker)
               } else {
                 invoker.value = nextValue
