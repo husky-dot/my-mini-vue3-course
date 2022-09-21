@@ -19,12 +19,12 @@
       }
 
       function createRenderer(options) {
-        const { createElement, setElement, insert, patchProps } = options
+        const { createElement, setElementText, insert, patchProps } = options
 
         function mountElement(vnode, container) {
           const el = (vnode.el = createElement(vnode.type))
           if (typeof vnode.children === 'string') {
-            setElement(el, vnode.children)
+            setElementText(el, vnode.children)
           } else if (Array.isArray(vnode.children)) {
             vnode.children.forEach((child) => {
               patch(null, child, el)
@@ -41,6 +41,7 @@
         }
 
         function patchElement(n1, n2) {
+          // 第一：更新 props
           const el = (n2.el = n1.el)
           const oldProps = n1.props
           const newProps = n2.props
@@ -53,6 +54,30 @@
           for (const key in oldProps) {
             if (!(key in newProps)) {
               patchProps(el, key, oldProps[key], null)
+            }
+          }
+          // 第二：更新 children
+          patchChildren(n1, n2, el)
+        }
+        function patchChildren(n1, n2, container) {
+          if (typeof n2.children === 'string') {
+            if (Array.isArray(n1.children)) {
+              n1.children.forEach((c) => unmount(c))
+            }
+            setElementText(container, n2, children)
+          } else if (Array.isArray(n2.children)) {
+            if (Array.isArray(n1.children)) {
+              n1.children.forEach((c) => unmount(c))
+              n2.children.forEach((c) => patch(null, c, container))
+            } else {
+              setElementText(container, '')
+              n2.children.forEach((c) => patch(null, c, container))
+            }
+          } else {
+            if (Array.isArray(n1.children)) {
+              n1.children.forEach((c) => unmount(c))
+            } else if (typeof n1.children === 'string') {
+              setElementText(container, '')
             }
           }
         }
@@ -102,7 +127,7 @@
           return document.createElement(tag)
         },
         // 用于设置元素的文本节点
-        setElement(el, text) {
+        setElementText(el, text) {
           el.textContent = text
         },
         // 用于在给定的 parent 下添加指定元素

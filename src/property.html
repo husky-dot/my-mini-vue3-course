@@ -7,12 +7,24 @@
     <title>Document</title>
   </head>
   <body>
-    <input id="my-input" type="value" />
-    <div id="div" class="myClass" colspan="22"></div>
-  
+    <div id="div" class="myClass" colspan="22">
+      <p>11</p>
+
+      some
+    </div>
+
     <script>
-      const el = document.querySelector('#my-input')
-      const elDiv = document.querySelector('#div')
+
+      const vnode = {
+        type: 'div',
+        children: [
+          {
+            type: 'p',
+            children: 11
+          },
+          'some'
+        ]
+      }
     </script>
   </body>
 </html>
