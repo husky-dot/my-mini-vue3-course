@@ -12,6 +12,9 @@
     <script>
       const { effect, ref } = VueReactivity
 
+      const Text = Symbol()
+      const Comment = Symbol()
+
       function shouldSetAdProps(el, key, value) {
         // 特殊处理
         if (key === 'form' && el.tagName === 'INPUT') return false
@@ -19,7 +22,14 @@
       }
 
       function createRenderer(options) {
-        const { createElement, setElementText, insert, patchProps } = options
+        const {
+          createElement,
+          setElementText,
+          insert,
+          patchProps,
+          createText,
+          setText,
+        } = options
 
         function mountElement(vnode, container) {
           const el = (vnode.el = createElement(vnode.type))
@@ -100,6 +110,17 @@
               // 打补丁了，后面在来实现
               patchElement(n1, n2)
             }
+          } else if (type === Text) {
+            if (!n1) {
+              const el = (n2.el = createText(n2.children))
+              insert(el, container)
+            } else {
+              const el = (n2.el = n1.el)
+              if (n2.children !== n1.children) {
+                el.nodeValue = n2.children
+                setText(el, n2.children)
+              }
+            }
           } else if (typeof type === 'object') {
             // 描述的是一个组件
           } else if (type === 'xxx') {
@@ -133,6 +154,12 @@
         // 用于在给定的 parent 下添加指定元素
         insert(el, parent, anchor = null) {
           parent.insertBefore(el, anchor)
+        },
+        createText(text) {
+          return document.createTextNode(text)
+        },
+        setText(el, text) {
+          el.nodeValue = text
         },
         patchProps(el, key, preValue, nextValue) {
           if (/^on/.test(key)) {
@@ -175,7 +202,8 @@
       })
 
       const vnode = {
-        type: 'div',
+        type: Text,
+        children: '文本节点',
       }
       renderer.render(vnode, document.querySelector('#app'))
     </script>
