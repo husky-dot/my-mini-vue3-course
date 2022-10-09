@@ -14,6 +14,7 @@
 
       const Text = Symbol()
       const Comment = Symbol()
+      const Fragment = Symbol()
 
       function shouldSetAdProps(el, key, value) {
         // 特殊处理
@@ -202,9 +203,14 @@
       })
 
       const vnode = {
-        type: Text,
-        children: '文本节点',
+        type: Fragment,
+        children: [
+          { type: 'li', children: 'text 1' },
+          { type: 'li', children: 'text 2' },
+          { type: 'li', children: 'text 3' },
+        ],
       }
+
       renderer.render(vnode, document.querySelector('#app'))
     </script>
   </body>
