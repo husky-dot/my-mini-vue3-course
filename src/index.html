@@ -93,6 +93,10 @@
           }
         }
         function unmount(vnode) {
+          if (vnode.type === Fragment) {
+            vnode.children.forEach(c => unmount(c))
+            return
+          }
           const parent = vnode.el.parentNode
           if (parent) {
             parent.removeChild(vnode.el)
@@ -121,6 +125,12 @@
                 el.nodeValue = n2.children
                 setText(el, n2.children)
               }
+            }
+          } else if (type === Fragment) {
+            if (!n1) {
+              n2.children.forEach((c) => patch(null, c, container))
+            } else {
+              patchChildren(n1, n2, container)
             }
           } else if (typeof type === 'object') {
             // 描述的是一个组件
