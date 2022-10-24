@@ -75,11 +75,14 @@
             if (Array.isArray(n1.children)) {
               n1.children.forEach((c) => unmount(c))
             }
-            setElementText(container, n2, children)
+            setElementText(container, n2.children)
           } else if (Array.isArray(n2.children)) {
             if (Array.isArray(n1.children)) {
-              n1.children.forEach((c) => unmount(c))
-              n2.children.forEach((c) => patch(null, c, container))
+              const oldChildren = n1.children
+              const newChildren = n2.children 
+              for (let i = 0; i < oldChildren.length; i++) {
+                patch(oldChildren[i], newChildren[i])
+              }
             } else {
               setElementText(container, '')
               n2.children.forEach((c) => patch(null, c, container))
