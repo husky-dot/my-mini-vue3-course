@@ -94,7 +94,7 @@
         }
         function unmount(vnode) {
           if (vnode.type === Fragment) {
-            vnode.children.forEach(c => unmount(c))
+            vnode.children.forEach((c) => unmount(c))
             return
           }
           const parent = vnode.el.parentNode
@@ -211,17 +211,29 @@
           }
         },
       })
-
+      // 旧 vnode
       const vnode = {
-        type: Fragment,
+        type: 'div',
         children: [
-          { type: 'li', children: 'text 1' },
-          { type: 'li', children: 'text 2' },
-          { type: 'li', children: 'text 3' },
+          { type: 'p', children: '1' },
+          { type: 'p', children: '2' },
+          { type: 'p', children: '3' },
+        ],
+      }
+      // 新 vnode
+      const newVNode = {
+        type: 'div',
+        children: [
+          { type: 'p', children: '4' },
+          { type: 'p', children: '5' },
+          { type: 'p', children: '6' },
         ],
       }
 
       renderer.render(vnode, document.querySelector('#app'))
+      setTimeout(() => {
+        renderer.render(newVNode, document.querySelector('#app'))
+      }, 2000)
     </script>
   </body>
 </html>
