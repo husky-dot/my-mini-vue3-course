@@ -80,19 +80,15 @@
             if (Array.isArray(n1.children)) {
               const oldChildren = n1.children
               const newChildren = n2.children
-              const oldLen = oldChildren.length
-              const newLen = newChildren.length
-              const commonLength = Math.min(oldLen, newLen)
-              for (let i = 0; i < commonLength; i++) {
-                patch(oldChildren[i], newChildren[i])
-              }
-              if (newLen > oldLen) {
-                for (let i = commonLength; i < newLen; i++) {
-                  patch(null, newChildren[i], container)
-                }
-              } else if (oldLen > newLen) {
-                for (let i = commonLength; i < oldLen; i++) {
-                  unmount(oldChildren[i])
+
+              for (let i = 0; i < newChildren.length; i++) {
+                const newVNode = newChildren[i]
+                for (let j = 0; j < oldChildren.length; j++) {
+                  const oldVNode = oldChildren[j]
+                  if (newVNode.key === oldVNode.key) {
+                    patch(oldVNode, newVNode, container)
+                    break
+                  }
                 }
               }
             } else {
